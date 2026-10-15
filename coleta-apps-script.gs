@@ -1,8 +1,13 @@
 /**
  * VoxAI, versão da CLÍNICA ESCOLA: coleta opt-in do teste aplicado na clínica.
  *
- * É o mesmo script do site público (voxai/coleta-apps-script.gs), publicado numa
- * planilha à parte. Só mudam a pasta dos áudios e o nome do serviço no doGet.
+ * É o mesmo script do site público (voxai/coleta-apps-script.gs), mas roda como um
+ * projeto à parte e grava na aba "clinica" da planilha do público. Mudam a planilha
+ * (aberta pelo ID), a aba, a pasta dos áudios e o nome do serviço no doGet.
+ *
+ * Crie o projeto em script.google.com → Novo projeto, logado na conta dona da planilha.
+ * NÃO use Extensões → Apps Script dentro da planilha: esse menu abre o script do site
+ * público, e colar este código por cima apagaria o dele.
  *
  * Recebe o POST do voxai-clinica/index.html e grava:
  *   - uma linha na planilha (questionário + 20 medidas + grau), identificada por um ID aleatório;
@@ -16,12 +21,13 @@
  * Na primeira execução o Apps Script pede autorização para Planilhas e Drive.
  */
 
-// Deixe vazio para usar a planilha à qual este script está vinculado.
+// ID da planilha do site público, onde fica a aba da clínica: o trecho do link entre
+// "/d/" e "/edit". Fica vazio aqui porque o repositório é público; preencha só no
+// editor do Apps Script.
 var PLANILHA_ID = "";
-// A aba precisa estar vazia (ou não existir) na primeira execução: o cabeçalho mudou
-// e ganhou as 20 medidas + áudio. Se houver uma aba antiga com outro formato, apague-a
-// antes — o script para com erro em vez de gravar linhas desalinhadas.
-var ABA = "respostas";
+// Aba da clínica, ao lado da aba do público. É criada com o cabeçalho na primeira
+// execução. Não use o nome da aba do público.
+var ABA = "clinica";
 // Pasta do Drive onde os áudios são gravados (criada na primeira vez, se não existir).
 // A pasta é achada pelo nome. Com o nome do site público ("VoxAI - audios"), os áudios
 // da clínica cairiam na mesma pasta dos áudios do público.
@@ -98,8 +104,11 @@ function autorizar() {
  * desalinhadas (foi o que aconteceria ao reaproveitar a aba antiga).
  */
 function pegaAba_() {
-  var ss = PLANILHA_ID ? SpreadsheetApp.openById(PLANILHA_ID)
-                       : SpreadsheetApp.getActiveSpreadsheet();
+  // Sem o ID não há planilha vinculada a que recorrer: o projeto da clínica é avulso.
+  if (!PLANILHA_ID) {
+    throw new Error("Preencha PLANILHA_ID com o ID da planilha (o trecho do link entre /d/ e /edit).");
+  }
+  var ss = SpreadsheetApp.openById(PLANILHA_ID);
   var aba = ss.getSheetByName(ABA) || ss.insertSheet(ABA);
   if (aba.getLastRow() === 0) {
     aba.appendRow(COLUNAS);

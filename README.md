@@ -1,7 +1,7 @@
 # VoxAI · clínica escola
 
-Versão do teste do VoxAI usada na clínica escola. Grava numa planilha própria,
-separada da coleta do site público.
+Versão do teste do VoxAI usada na clínica escola. Grava numa aba própria da planilha
+de coleta, separada da aba do site público, por um script próprio.
 
 Endereço: https://hglucena.github.io/voxai-clinica/
 
@@ -13,7 +13,7 @@ neste endereço.
 O `index.html` daqui é uma cópia do `teste.html` do repositório
 [voxai](https://github.com/hglucena/voxai), com estas mudanças:
 
-- `COLETA_URL` aponta para o Apps Script da planilha da clínica, não para o do site.
+- `COLETA_URL` aponta para o Apps Script da clínica, não para o do site.
 - A página roda sempre no modo fechado do app (`data-app`): some o "Voltar ao site" e
   o "Sobre o projeto", e o logo do topo não reinicia o teste.
 - Selo "Clínica escola" no topo, para quem aplica o teste conferir que está na versão
@@ -26,22 +26,36 @@ copiada para cá à mão, mantendo as diferenças acima.
 
 ## Planilha
 
-O script é o `coleta-apps-script.gs`. É o mesmo do site público, com duas diferenças:
-os áudios vão para outra pasta do Drive (`VoxAI clinica escola - audios`) e o `doGet`
-responde `voxai-clinica-coleta`, o que permite conferir, abrindo a URL no navegador,
-que ela é a da clínica.
+Os dados da clínica ficam na aba `clinica` da mesma planilha do site público. Quem
+grava nela é um projeto de Apps Script à parte, com o código de
+`coleta-apps-script.gs`. O script do site público não é tocado.
+
+Em relação ao script do público, o da clínica muda em quatro pontos:
+
+- abre a planilha pelo ID (`PLANILHA_ID`), porque não fica vinculado a ela;
+- grava na aba `clinica`;
+- guarda os áudios em outra pasta do Drive (`VoxAI clinica escola - audios`);
+- o `doGet` responde `voxai-clinica-coleta`, o que permite conferir, abrindo a URL no
+  navegador, que ela é a da clínica.
+
+O ID da planilha não está no repositório, que é público. Ele é preenchido só no editor
+do Apps Script.
 
 Para publicar:
 
-1. Criar uma planilha nova no Google Drive e abrir Extensões → Apps Script.
-2. Apagar o código que vem pronto, colar o conteúdo de `coleta-apps-script.gs` e salvar.
-3. Escolher a função `autorizar` e clicar em Executar. Aceitar as permissões de
+1. Logado na conta Google dona da planilha, abrir script.google.com → Novo projeto.
+   Não usar Extensões → Apps Script dentro da planilha: esse menu abre o script do
+   site público, e colar o código por cima apagaria o dele.
+2. Apagar o código que vem pronto e colar o conteúdo de `coleta-apps-script.gs`.
+3. Preencher `PLANILHA_ID` com o trecho do link da planilha entre `/d/` e `/edit`, e
+   salvar.
+4. Escolher a função `autorizar` e clicar em Executar. Aceitar as permissões de
    Planilhas e Drive. Se aparecer o aviso de app não verificado, clicar em Avançado e
-   depois em "Acessar".
-4. Implantar → Nova implantação → App da Web, com "Executar como: Eu" e "Quem tem
+   depois em "Acessar". A aba `clinica` aparece na planilha nessa hora.
+5. Implantar → Nova implantação → App da Web, com "Executar como: Eu" e "Quem tem
    acesso: Qualquer pessoa" (não a opção "Qualquer pessoa com Conta do Google", que
    dá erro 401).
-5. Copiar a URL que termina em `/exec` para o `COLETA_URL` do `index.html`.
+6. Copiar a URL que termina em `/exec` para o `COLETA_URL` do `index.html`.
 
 Toda edição no script exige uma nova implantação. Sem isso, a URL continua rodando a
 versão antiga.
