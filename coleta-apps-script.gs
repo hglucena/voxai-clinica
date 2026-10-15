@@ -3,7 +3,8 @@
  *
  * É o mesmo script do site público (voxai/coleta-apps-script.gs), mas roda como um
  * projeto à parte e grava na aba "clinica" da planilha do público. Mudam a planilha
- * (aberta pelo ID), a aba, a pasta dos áudios e o nome do serviço no doGet.
+ * (aberta pelo ID), a aba, a pasta dos áudios, a coluna do código do paciente e o
+ * doGet, que se identifica e confere a aba.
  *
  * Crie o projeto em script.google.com → Novo projeto, logado na conta dona da planilha.
  * NÃO use Extensões → Apps Script dentro da planilha: esse menu abre o script do site
@@ -26,7 +27,8 @@
 // editor do Apps Script.
 var PLANILHA_ID = "";
 // Aba da clínica, ao lado da aba do público. É criada com o cabeçalho na primeira
-// execução. Não use o nome da aba do público.
+// execução. Não use o nome da aba do público. Se as colunas mudarem, apague ou
+// renomeie a aba antes: o script não grava numa aba com cabeçalho diferente.
 var ABA = "clinica";
 // Pasta do Drive onde os áudios são gravados (criada na primeira vez, se não existir).
 // A pasta é achada pelo nome. Com o nome do site público ("VoxAI - audios"), os áudios
@@ -39,7 +41,7 @@ var FEATURES = [
   "GNE3000HZ", "Hfno", "HNRmedia", "HNRdp", "HNRD", "SNL100_3000HZ"
 ];
 
-var COLUNAS = ["data", "id", "genero", "idade", "foraFaixa", "profissaoUsaVoz",
+var COLUNAS = ["data", "codigo_paciente", "id", "genero", "idade", "foraFaixa", "profissaoUsaVoz",
                "queixaVocal", "esforcoVocal", "rouquidao",
                "grau", "grau_rotulo", "score_GG"]
               .concat(FEATURES)
@@ -59,9 +61,13 @@ function doPost(e) {
       audioLink = arquivo.getUrl();
     }
 
+    // O código do paciente entra como texto (o apóstrofo não aparece na célula). Sem ele,
+    // a planilha transformaria "000452" em 452 e um código começado por "=" em fórmula.
+    var codigo = String(dados.codigo_paciente || "").trim().slice(0, 40);
+
     var feats = dados.features || {};
     var linha = [
-      new Date(), id, dados.genero || "", dados.idade,
+      new Date(), codigo ? "'" + codigo : "", id, dados.genero || "", dados.idade,
       dados.foraFaixa ? "sim" : "nao",
       dados.profissaoUsaVoz || "", dados.queixaVocal || "",
       dados.esforcoVocal || "", dados.rouquidao || "",
@@ -81,8 +87,17 @@ function doPost(e) {
 }
 
 function doGet() {
-  // Nome próprio para dar para conferir, abrindo a URL, que ela é a da clínica.
-  return json_({ ok: true, servico: "voxai-clinica-coleta" });
+  // Nome próprio para dar para conferir, abrindo a URL, que ela é a da clínica. Também
+  // confere a aba, sem gravar resposta nenhuma: com o cabeçalho errado os envios falham,
+  // e o site não percebe, porque não lê a resposta do POST.
+  var resp = { ok: true, servico: "voxai-clinica-coleta", colunas: COLUNAS.length, aba: "ok" };
+  try {
+    pegaAba_();
+  } catch (err) {
+    resp.ok = false;
+    resp.aba = String(err);
+  }
+  return json_(resp);
 }
 
 /**

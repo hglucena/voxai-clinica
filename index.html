@@ -127,6 +127,7 @@
   .opt input:focus-visible + span{outline:2px solid var(--secondary);outline-offset:2px;}
   .num{width:130px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:15px;font-family:inherit;color:var(--ink);}
   .num:focus{outline:2px solid var(--secondary);outline-offset:1px;}
+  .num.codigo{width:220px;max-width:100%;}
   .warn-inline{display:none;margin-top:9px;font-size:13px;color:var(--g2);background:color-mix(in oklab,var(--g2) 12%,white);padding:9px 12px;border-radius:var(--radius-sm);}
   .warn-inline.on{display:block;}
   /* comparação das medidas com os valores de referência */
@@ -206,6 +207,10 @@
         </div>
         <div class="form">
           <div class="field">
+            <label class="q" for="q-codigo">Número/código do paciente</label>
+            <input class="num codigo" type="text" id="q-codigo" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="número ou código">
+          </div>
+          <div class="field">
             <label class="q">Gênero</label>
             <div class="opts">
               <label class="opt"><input type="radio" name="genero" value="Mulher"><span>Mulher</span></label>
@@ -252,7 +257,7 @@
               <label class="opt"><input type="radio" name="coleta" value="sim"><span>Sim, autorizo</span></label>
               <label class="opt"><input type="radio" name="coleta" value="nao"><span>Não</span></label>
             </div>
-            <p class="disc" style="text-align:left;margin-top:8px;">Se autorizar, guardamos as respostas acima, as medidas da sua voz, o resultado e a gravação que você fez. Não pedimos nem registramos nome, e-mail ou qualquer coisa que identifique você. Recusar não muda o teste.</p>
+            <p class="disc" style="text-align:left;margin-top:8px;">Se autorizar, guardamos as respostas acima, inclusive o código do paciente, as medidas da sua voz, o resultado e a gravação que você fez. Não registramos nome nem e-mail. Pelo código, a equipe da clínica consegue ligar este teste à sua avaliação. Recusar não muda o teste.</p>
           </div>
         </div>
         <div class="row" style="margin-top:10px;justify-content:flex-end;">
@@ -743,7 +748,7 @@ function legendaHTML(destaque){
   }).join("");
 }
 function initQuest(){
-  const idade=$("q-idade"), warn=$("idade-warn"), cont=$("q-continue");
+  const idade=$("q-idade"), warn=$("idade-warn"), cont=$("q-continue"), codigo=$("q-codigo");
   if(COLETA_URL){
     $("coleta-field").style.display="";
     $("quest-sub").textContent="Ajudam a interpretar o resultado. Suas respostas ficam neste aparelho. Só enviamos algo se você autorizar abaixo.";
@@ -761,7 +766,10 @@ function initQuest(){
     const r=document.querySelector('input[name=rouquidao]:checked');
     const a=parseInt(idade.value,10);
     const idadeOk=Number.isFinite(a)&&a>=1&&a<=120;
-    cont.disabled=!(g&&p&&q&&ef&&r&&idadeOk);
+    // Na clínica o código do paciente é obrigatório: é por ele que o teste é ligado à
+    // avaliação da pessoa depois.
+    const codigoOk=codigo.value.trim()!=="";
+    cont.disabled=!(g&&p&&q&&ef&&r&&idadeOk&&codigoOk);
   }
   // O aviso de idade espera o usuário parar de digitar (ou sair do campo);
   // o botão Continuar reage na hora.
@@ -774,24 +782,28 @@ function initQuest(){
   document.querySelectorAll('#quest input[type=radio]').forEach(el=>el.addEventListener("change",updateBtn));
   idade.addEventListener("input", ()=>{ updateBtn(); agendaAviso(); });
   idade.addEventListener("blur", mostraAviso);
+  codigo.addEventListener("input", updateBtn);
   updateBtn();
 }
 function coletaPerfil(){
   const a=parseInt($("q-idade").value,10);
   const pick=n=>{const el=document.querySelector('input[name='+n+']:checked');return el?el.value:null;};
   perfil={ genero:pick("genero"), idade:Number.isFinite(a)?a:null, profissaoUsaVoz:pick("prof"), queixaVocal:pick("queixa"), esforcoVocal:pick("esforco"), rouquidao:pick("rouquidao") };
+  perfil.codigoPaciente = $("q-codigo").value.trim();
   perfil.foraFaixa = perfil.idade!=null && (perfil.idade<19||perfil.idade>65);
   perfil.consente = (pick("coleta")==="sim");
 }
 // Envio opt-in para a Planilha (Apps Script). "no-cors" evita o preflight que o
 // Apps Script não trata; é fire-and-forget (não lemos a resposta). Vai o questionário,
 // as 20 medidas, o grau e o áudio da tarefa — ligados pelo SESSAO_ID, que também vira
-// o nome do arquivo no Drive. Nada aqui identifica a pessoa.
+// o nome do arquivo no Drive. Na clínica vai também o código do paciente, que só a
+// equipe da clínica sabe ligar à pessoa.
 function enviarColeta(res, feats){
   if(!COLETA_URL || !perfil || !perfil.consente) return;
   try{
     const payload={
       id:SESSAO_ID,
+      codigo_paciente:perfil.codigoPaciente||"",
       genero:perfil.genero, idade:perfil.idade,
       profissaoUsaVoz:perfil.profissaoUsaVoz, queixaVocal:perfil.queixaVocal,
       esforcoVocal:perfil.esforcoVocal, rouquidao:perfil.rouquidao,

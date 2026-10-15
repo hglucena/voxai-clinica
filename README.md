@@ -19,6 +19,10 @@ O `index.html` daqui é uma cópia do `teste.html` do repositório
 - Selo "Clínica escola" no topo, para quem aplica o teste conferir que está na versão
   certa.
 - `noindex`, para o site não aparecer em buscadores.
+- Pergunta obrigatória "Número/código do paciente" no começo do questionário. É por
+  esse código que a equipe liga cada teste à avaliação do paciente. O botão de
+  continuar só libera com ele preenchido, e o texto do consentimento avisa que o
+  código é guardado.
 
 Mudanças no modelo e no extrator chegam aqui sem fazer nada, porque as duas versões
 usam as mesmas APIs. Já uma correção no `teste.html` do site público precisa ser
@@ -30,13 +34,16 @@ Os dados da clínica ficam na aba `clinica` da mesma planilha do site público. 
 grava nela é um projeto de Apps Script à parte, com o código de
 `coleta-apps-script.gs`. O script do site público não é tocado.
 
-Em relação ao script do público, o da clínica muda em quatro pontos:
+Em relação ao script do público, o da clínica muda nestes pontos:
 
 - abre a planilha pelo ID (`PLANILHA_ID`), porque não fica vinculado a ela;
 - grava na aba `clinica`;
+- grava o código do paciente na coluna B (`codigo_paciente`), como texto, para não
+  perder zeros à esquerda;
 - guarda os áudios em outra pasta do Drive (`VoxAI clinica escola - audios`);
-- o `doGet` responde `voxai-clinica-coleta`, o que permite conferir, abrindo a URL no
-  navegador, que ela é a da clínica.
+- o `doGet` responde `voxai-clinica-coleta` e confere a aba sem gravar resposta
+  nenhuma. Abrindo a URL no navegador, dá para ver que ela é a da clínica e se a aba
+  está pronta (`"aba": "ok"`).
 
 O ID da planilha não está no repositório, que é público. Ele é preenchido só no editor
 do Apps Script.
@@ -57,5 +64,14 @@ Para publicar:
    dá erro 401).
 6. Copiar a URL que termina em `/exec` para o `COLETA_URL` do `index.html`.
 
-Toda edição no script exige uma nova implantação. Sem isso, a URL continua rodando a
-versão antiga.
+## Depois de editar o script
+
+Toda edição no script só vale depois de publicar uma nova versão no mesmo endereço:
+Implantar → Gerenciar implantações → lápis (Editar) → Versão: Nova versão →
+Implantar. "Nova implantação" cria uma URL diferente, e o site continuaria mandando
+para a antiga.
+
+Se a edição mudar as colunas, apague ou renomeie a aba `clinica` antes e rode
+`autorizar`, que cria a aba de novo com o cabeçalho certo. O script não grava numa aba
+com cabeçalho diferente, e o site não percebe a falha. Para conferir, abra a URL `/exec`
+no navegador: a resposta precisa ter `"aba": "ok"`.
