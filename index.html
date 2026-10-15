@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VoxAI · Clínica escola</title>
+<meta name="description" content="Triagem vocal: grave a vogal /a/ e a contagem de 1 a 10 e receba uma estimativa do grau de disfonia (G0 a G3), direto no navegador." />
+<!-- Versão de uso interno da clínica escola: fora dos buscadores. -->
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<style>
+  :root{
+    --primary:#0f9aa8;
+    --secondary:#4638a8;
+    --ink:#1c2433;
+    --mut:#5a6473;
+    --bg:#ffffff; --soft:#f7f8fa; --line:#e4e7ec; --card:#fff;
+    --radius:10px; --radius-sm:8px;
+    --shadow-sm:none;
+    --shadow-md:0 1px 3px rgba(20,27,45,.05);
+    --shadow-lg:0 1px 3px rgba(20,27,45,.05);
+    --grad:var(--secondary);
+    --g0:oklch(0.72 0.17 150); --g1:oklch(0.80 0.15 85); --g2:oklch(0.70 0.17 55); --g3:oklch(0.62 0.22 27);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--soft);line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100dvh;}
+  a{color:inherit;}
+  img{max-width:100%;}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px;}
+  header.top{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;}
+  .top-inner{display:flex;align-items:center;justify-content:space-between;height:62px;max-width:760px;margin:0 auto;padding:0 20px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;text-decoration:none;color:var(--ink);}
+  .brand img{height:30px;}
+  .back{font-size:14px;font-weight:600;color:var(--mut);text-decoration:none;}
+  .back:hover{color:var(--primary);}
+  .local{font-size:13px;font-weight:700;color:var(--secondary);background:color-mix(in oklab,var(--secondary) 10%,white);padding:4px 12px;border-radius:999px;white-space:nowrap;}
+  main{padding:34px 0 60px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:32px 28px;}
+  h1{font-size:clamp(24px,4vw,30px);font-weight:700;letter-spacing:-.01em;margin:0 0 6px;}
+  h2{font-size:21px;font-weight:700;margin:0;letter-spacing:-.01em;}
+  .sub{color:var(--mut);margin:0 0 4px;}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:14px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font-weight:600;font-size:15px;padding:12px 22px;border-radius:8px;border:0;text-decoration:none;transition:transform .12s,box-shadow .2s,filter .2s;font-family:inherit;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:var(--secondary);color:#fff;}
+  .btn-primary:hover:not(:disabled){background:#3a2e8e;}
+  .btn-ghost{background:var(--soft);color:var(--ink);}
+  .btn-ghost:hover{background:#e9eef6;}
+  .btn-danger{background:oklch(0.60 0.20 25);color:#fff;}
+  .steps-intro{display:flex;flex-direction:column;gap:12px;margin:22px 0 26px;text-align:left;}
+  .si{display:flex;gap:14px;align-items:flex-start;}
+  .si .n{flex:0 0 auto;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-weight:700;color:#fff;background:var(--secondary);}
+  .si b{display:block;font-size:15.5px;}
+  .si span{color:var(--mut);font-size:14px;}
+  .tips{background:var(--soft);border-radius:var(--radius-sm);padding:16px 18px;text-align:left;font-size:14px;color:var(--mut);margin-bottom:24px;}
+  .tips b{color:var(--ink);}
+  .tips ul{margin:8px 0 0;padding-left:18px;}
+  .center{text-align:center;}
+  .taskbar{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
+  .taskchip{font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:20px;background:var(--soft);color:var(--mut);border:1px solid var(--line);}
+  .taskchip.active{background:color-mix(in oklab,var(--primary) 12%,white);color:var(--secondary);border-color:color-mix(in oklab,var(--primary) 30%,white);}
+  .taskchip.done{background:color-mix(in oklab,var(--g0) 14%,white);color:var(--g0);border-color:color-mix(in oklab,var(--g0) 30%,white);}
+  .bars{display:flex;align-items:flex-end;justify-content:center;gap:5px;height:96px;margin:8px 0 4px;}
+  .bars i{display:block;width:6px;border-radius:6px;background:var(--primary);height:8px;transition:height .1s ease;opacity:.35;}
+  .timer{font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;color:var(--secondary);text-align:center;}
+  .timer small{font-size:13px;color:var(--mut);font-weight:600;margin-left:6px;}
+  .count{width:100px;height:100px;margin:6px auto;border-radius:50%;display:grid;place-items:center;font-size:48px;font-weight:700;color:var(--secondary);background:var(--soft);border:1px solid var(--line);}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .rec-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:oklch(0.6 0.2 25);animation:blink 1s infinite;margin-right:7px;vertical-align:middle;}
+  @keyframes blink{50%{opacity:.3}}
+  .msg{border-radius:var(--radius-sm);padding:14px 16px;font-size:14px;margin:16px 0;text-align:left;display:flex;gap:9px;align-items:flex-start;}
+  .msg-warn{background:color-mix(in oklab,var(--g3) 10%,white);color:var(--g3);}
+  .msg-ok{background:color-mix(in oklab,var(--g0) 12%,white);color:var(--g0);}
+  .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .screen{display:none;}
+  .screen.on{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  /* analyzing */
+  .an-bars{display:flex;align-items:flex-end;justify-content:center;gap:6px;height:64px;margin:6px 0 22px;}
+  .an-bars i{width:6px;border-radius:6px;background:var(--primary);animation:eq 1.4s ease-in-out infinite;}
+  @keyframes eq{0%,100%{height:20%}50%{height:100%}}
+  .an-steps{list-style:none;padding:0;margin:18px 0 0;text-align:left;display:flex;flex-direction:column;gap:8px;}
+  .an-steps li{display:flex;gap:11px;align-items:center;font-size:14.5px;color:var(--mut);padding:9px 13px;border-radius:12px;transition:background .2s;}
+  .an-steps li.active{background:color-mix(in oklab,var(--primary) 10%,white);color:var(--secondary);font-weight:600;}
+  .an-steps li.done{color:var(--g0);}
+  .dot{width:16px;height:16px;border-radius:50%;border:2px solid color-mix(in oklab,var(--mut) 40%,white);flex:0 0 auto;}
+  .an-steps li.active .dot{border-color:var(--primary);border-right-color:transparent;animation:spin .7s linear infinite;}
+  .an-steps li.done .dot{border-color:var(--g0);background:var(--g0);}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hint{color:var(--mut);font-size:13px;margin-top:16px;min-height:18px;}
+  /* result */
+  .grade{width:110px;height:110px;margin:4px auto 10px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:40px;font-weight:700;}
+  .gauge{position:relative;height:14px;border-radius:8px;margin:26px 0 8px;overflow:hidden;display:flex;}
+  .gauge span{display:block;height:100%;}
+  .gmark{position:absolute;top:-7px;width:4px;height:28px;background:var(--ink);border-radius:3px;transform:translateX(-50%);box-shadow:0 0 0 2px #fff;}
+  .glabels{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);}
+  .measures{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:14px;}
+  .meas{background:var(--soft);border-radius:11px;padding:9px 12px;font-size:13px;}
+  .meas b{display:block;font-size:14.5px;color:var(--ink);}
+  .meas span{color:var(--mut);font-size:11.5px;}
+  .meas.imp b{color:var(--mut);}
+  details{margin-top:22px;border-top:1px solid var(--line);padding-top:16px;}
+  summary{cursor:pointer;font-weight:700;font-size:14.5px;color:var(--secondary);}
+  .disc{font-size:12px;color:var(--mut);margin-top:20px;text-align:center;opacity:.9;}
+  audio{width:100%;margin-top:6px;}
+  /* legenda dos graus */
+  .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0 4px;text-align:left;}
+  @media(max-width:380px){.legend{grid-template-columns:1fr;}}
+  .lg{display:flex;gap:11px;align-items:flex-start;background:var(--soft);border-radius:var(--radius-sm);padding:14px 15px;}
+  .lg .dotg{flex:0 0 auto;width:32px;height:32px;border-radius:7px;color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center;}
+  .lg b{font-size:14px;display:block;}
+  .lg em{font-size:12px;color:var(--mut);font-style:normal;}
+  .legend-title{font-size:13px;font-weight:700;color:var(--ink);margin-top:20px;text-align:left;}
+  /* questionário */
+  .form{text-align:left;display:flex;flex-direction:column;gap:20px;margin:22px 0 8px;}
+  .field label.q{display:block;font-weight:700;font-size:15px;margin-bottom:9px;}
+  .field label.q small{font-weight:400;color:var(--mut);font-size:13px;}
+  .opts{display:flex;flex-wrap:wrap;gap:8px;}
+  .opt{cursor:pointer;position:relative;}
+  .opt input{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
+  .opt span{display:inline-flex;align-items:center;padding:9px 16px;border:1px solid var(--line);border-radius:20px;font-size:14px;font-weight:600;color:var(--mut);background:#fff;transition:all .12s;}
+  .opt input:checked + span{border-color:var(--secondary);background:color-mix(in oklab,var(--secondary) 10%,white);color:var(--secondary);}
+  .opt input:focus-visible + span{outline:2px solid var(--secondary);outline-offset:2px;}
+  .num{width:130px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:15px;font-family:inherit;color:var(--ink);}
+  .num:focus{outline:2px solid var(--secondary);outline-offset:1px;}
+  .warn-inline{display:none;margin-top:9px;font-size:13px;color:var(--g2);background:color-mix(in oklab,var(--g2) 12%,white);padding:9px 12px;border-radius:var(--radius-sm);}
+  .warn-inline.on{display:block;}
+  /* comparação das medidas com os valores de referência */
+  .cmp-intro{font-size:13px;color:var(--mut);text-align:left;margin:8px 0 4px;}
+  .cmp-intro b{color:var(--ink);}
+  .cmp-legend{display:flex;flex-wrap:wrap;gap:16px;margin:2px 0 16px;font-size:12px;color:var(--mut);}
+  .cmp-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+  .cmp{display:flex;flex-direction:column;gap:16px;text-align:left;}
+  .cmp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .cmp-name{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .cmp-pill{font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap;}
+  .cmp-track{position:relative;height:9px;border-radius:6px;overflow:hidden;display:flex;background:var(--soft);}
+  .cmp-z{height:100%;}
+  .cmp-mark{position:absolute;top:-3px;width:3px;height:15px;border-radius:3px;box-shadow:0 0 0 2px var(--card);transform:translateX(-50%);}
+  .cmp-ref{font-size:11.5px;color:var(--mut);margin-top:6px;font-variant-numeric:tabular-nums;}
+  .cmp-src{font-size:11.5px;color:var(--mut);text-align:left;margin:16px 0 0;opacity:.9;}
+  .cmp-sep{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin:24px 0 10px;text-align:left;}
+
+  /* Dentro do app Android o site é a própria casca, então some tudo que leva de
+     volta para a vitrine (inclusive a seção que oferece o download do APK). */
+  html[data-app] .so-site{display:none !important;}
+  /* A logo do topo vira só identidade: no app não há para onde ela levar. */
+  html[data-app] header.top .brand{pointer-events:none;}
+  /* Sem o "Sobre o projeto" ao lado, refazer o teste passa a ser a ação principal. */
+  html[data-app] #btn-again{background:var(--secondary);color:#fff;}
+</style>
+<script>
+  // A versão da clínica escola roda sempre no modo fechado do app: sem os links para o
+  // site público, e o logo não reinicia o teste se alguém tocar nele sem querer.
+  document.documentElement.setAttribute("data-app", "1");
+</script>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="index.html"><img src="logo.png" alt="VoxAI" /> VoxAI</a>
+    <span class="local">Clínica escola</span>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- INTRO -->
+    <section id="intro" class="screen on">
+      <div class="card center">
+        <div class="eyebrow">Triagem vocal</div>
+        <h1>Teste vocal em duas gravações</h1>
+        <p class="sub">Sem cadastro<span class="so-site"> e sem instalação</span>. A análise acontece na hora e não guardamos a sua gravação de voz.</p>
+        <div class="steps-intro">
+          <div class="si"><div class="n">1</div><div><b>Vogal /a/ sustentada</b><span>Faça um “ahhhhhhhh” bem longo, por uns 5 segundos, tentando não variar o tom.</span></div></div>
+          <div class="si"><div class="n">2</div><div><b>Contagem de 1 a 10</b><span>Conte “um, dois, três…” até dez, em ritmo e volume naturais.</span></div></div>
+          <div class="si"><div class="n">3</div><div><b>Resultado</b><span>O VoxAI estima o grau geral de disfonia (G0–G3) a partir da sua voz.</span></div></div>
+        </div>
+        <div class="tips">
+          <b>Para uma boa análise:</b>
+          <ul>
+            <li>Ambiente silencioso, a ~10 cm do microfone.</li>
+            <li>Você poderá ouvir e refazer cada gravação antes de enviar.</li>
+          </ul>
+        </div>
+        <div class="legend-title">O que o resultado significa</div>
+        <div class="legend" id="intro-legend"></div>
+        <button id="btn-start" class="btn btn-primary" style="margin-top:20px;">Começar</button>
+        <p class="disc">Ferramenta de triagem em fase de pesquisa. Não substitui a avaliação de um fonoaudiólogo.</p>
+      </div>
+    </section>
+
+    <!-- QUESTIONÁRIO -->
+    <section id="quest" class="screen">
+      <div class="card">
+        <div class="center">
+          <div class="eyebrow">Antes de começar</div>
+          <h2>Algumas perguntas rápidas</h2>
+          <p class="sub" id="quest-sub">Ajudam a interpretar o resultado. O gênero vai junto com as medidas da voz, porque o modelo usa uma versão para mulheres e outra para homens. As demais respostas ficam só neste aparelho, e nada é armazenado sem a sua autorização.</p>
+        </div>
+        <div class="form">
+          <div class="field">
+            <label class="q">Gênero</label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="genero" value="Mulher"><span>Mulher</span></label>
+              <label class="opt"><input type="radio" name="genero" value="Homem"><span>Homem</span></label>
+              <label class="opt"><input type="radio" name="genero" value="Outro"><span>Outro</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="q" for="q-idade">Idade</label>
+            <input class="num" type="number" id="q-idade" min="1" max="120" inputmode="numeric" placeholder="anos">
+            <div class="warn-inline" id="idade-warn">O modelo foi treinado com vozes de <b>19 a 65 anos</b>. Fora dessa faixa, o resultado pode ser menos confiável.</div>
+          </div>
+          <div class="field">
+            <label class="q">Sua profissão exige uso intenso da voz? <small>(professor(a), cantor(a), locutor(a), teleatendimento…)</small></label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="prof" value="sim"><span>Sim</span></label>
+              <label class="opt"><input type="radio" name="prof" value="nao"><span>Não</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="q">Você tem alguma queixa vocal no momento? <small>(rouquidão, cansaço vocal, falha na voz…)</small></label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="queixa" value="sim"><span>Sim</span></label>
+              <label class="opt"><input type="radio" name="queixa" value="nao"><span>Não</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="q">Sinto que tenho que fazer força para a minha voz sair?</label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="esforco" value="sim"><span>Sim</span></label>
+              <label class="opt"><input type="radio" name="esforco" value="nao"><span>Não</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="q">Minha voz é rouca?</label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="rouquidao" value="sim"><span>Sim</span></label>
+              <label class="opt"><input type="radio" name="rouquidao" value="nao"><span>Não</span></label>
+            </div>
+          </div>
+          <div class="field" id="coleta-field" style="display:none;">
+            <label class="q">Autoriza guardar suas respostas e sua gravação para a pesquisa do projeto?</label>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="coleta" value="sim"><span>Sim, autorizo</span></label>
+              <label class="opt"><input type="radio" name="coleta" value="nao"><span>Não</span></label>
+            </div>
+            <p class="disc" style="text-align:left;margin-top:8px;">Se autorizar, guardamos as respostas acima, as medidas da sua voz, o resultado e a gravação que você fez. Não pedimos nem registramos nome, e-mail ou qualquer coisa que identifique você. Recusar não muda o teste.</p>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px;justify-content:flex-end;">
+          <button id="q-continue" class="btn btn-primary" disabled>Continuar para a gravação</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECORDER -->
+    <section id="rec" class="screen">
+      <div class="card center">
+        <div class="taskbar">
+          <span class="taskchip" id="chip-vogal">1 · Vogal /a/</span>
+          <span class="taskchip" id="chip-contagem">2 · Contagem 1–10</span>
+        </div>
+        <div id="rec-body"><!-- preenchido via JS --></div>
+      </div>
+    </section>
+
+    <!-- ANALYZING -->
+    <section id="analyzing" class="screen">
+      <div class="card center">
+        <div class="an-bars" aria-hidden="true">
+          <i style="animation-delay:0s"></i><i style="animation-delay:.12s"></i><i style="animation-delay:.24s"></i>
+          <i style="animation-delay:.36s"></i><i style="animation-delay:.48s"></i><i style="animation-delay:.24s"></i>
+          <i style="animation-delay:.12s"></i><i style="animation-delay:.4s"></i><i style="animation-delay:.2s"></i>
+        </div>
+        <h2>Analisando sua voz…</h2>
+        <ul class="an-steps">
+          <li id="st-extraindo"><span class="dot"></span> Enviando o áudio e extraindo as medidas da voz</li>
+          <li id="st-classificando"><span class="dot"></span> Classificando o grau de desvio vocal</li>
+        </ul>
+        <p class="hint" id="an-hint"></p>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="result" class="screen">
+      <div class="card">
+        <div class="center">
+          <div class="eyebrow">Resultado da triagem</div>
+          <div class="grade" id="r-grade">–</div>
+          <h2 id="r-title">—</h2>
+          <p class="sub" id="r-msg" style="max-width:520px;margin:10px auto 0;"></p>
+        </div>
+        <div class="gauge" id="r-gauge"></div>
+        <div class="glabels"><span>0</span><span>G0</span><span>G1</span><span>G2</span><span>G3</span><span>100</span></div>
+        <div id="r-limite"></div>
+        <div id="r-caveat"></div>
+        <div class="legend-title">Escala dos graus</div>
+        <div class="legend" id="r-legend"></div>
+        <details>
+          <summary>Comparar suas medidas com os valores de referência</summary>
+          <p class="cmp-intro">As medidas da sua <b>vogal /a/</b> frente a valores de referência de vozes <b>sem distúrbio vocal</b>, na mesma tarefa de vogal sustentada, em falantes do português brasileiro. Aparecem as medidas que o modelo usou no seu resultado. Serve de orientação e não substitui a avaliação de um profissional.</p>
+          <div class="cmp-legend">
+            <span><i style="background:var(--g0)"></i>dentro do esperado</span>
+            <span><i style="background:var(--g3)"></i>fora do esperado</span>
+          </div>
+          <div class="cmp" id="r-compare"></div>
+          <p class="cmp-src">Referências: Feliciano et al. (2026) e Lopes &amp; Abreu (2024), medidas na vogal [a] sustentada com o VoxMore. Por isso os valores desta seção saem só da sua gravação da vogal, dos 3 segundos centrais, como o VoxMore faz. Para calcular o grau, o modelo usa as mesmas medidas tiradas da vogal junto com a contagem, então os números que entram no resultado são outros. As faixas de f0 (por sexo) usam valores gerais da literatura, não específicos do português brasileiro.</p>
+          <div class="cmp-sep">Sem valor de referência clínica</div>
+          <div class="measures" id="r-measures"></div>
+          <p class="cmp-src">O jitter absoluto é a mesma medida do jitter local, em µs. As demais ainda não têm valor de referência publicado nesses estudos.</p>
+          <p class="disc" id="r-imp" style="text-align:left;"></p>
+        </details>
+        <div class="row" style="margin-top:24px;">
+          <button id="btn-again" class="btn btn-ghost">Refazer teste</button>
+          <a class="btn btn-primary so-site" href="index.html">Sobre o projeto</a>
+        </div>
+        <p class="disc">Esta é uma triagem automatizada em fase de pesquisa, não um diagnóstico. A avaliação final é sempre de um fonoaudiólogo.</p>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+"use strict";
+const EXTRATOR = "https://theyzer-extrator-grbasi.hf.space";
+const GRBASI   = "https://theyzer-grbasi-api.hf.space";
+// URL /exec do Google Apps Script da planilha da CLÍNICA ESCOLA, que não é a mesma do
+// site público. Vazio = não coleta nada (o consentimento nem aparece).
+const COLETA_URL = "";
+
+// Aquece os servidores logo na abertura da pagina: os HF Spaces dormem quando
+// ociosos, e o tempo de leitura + gravacao costuma bastar para eles acordarem.
+fetch(EXTRATOR + "/health").catch(function(){});
+fetch(GRBASI + "/health").catch(function(){});
+
+// ID aleatório do teste: liga a linha da planilha ao arquivo de áudio no Drive.
+// Não deriva de nada da pessoa — é sorteado a cada teste.
+const SESSAO_ID = (function(){
+  try{
+    if(crypto.randomUUID) return crypto.randomUUID().replace(/-/g,"");
+    const b=new Uint8Array(16); crypto.getRandomValues(b);
+    return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("");
+  }catch(e){ return "s"+Date.now().toString(36)+Math.random().toString(36).slice(2,10); }
+})();
+
+const RMS_MIN = 0.012;
+const SNR_MIN_DB = 10;   // abaixo disso pede regravação (microfone ruidoso). Era 15, e junto
+// com o piso da API barrava gente demais em ambiente doméstico. Esta medida não é a
+// mesma da API: aqui é RMS de quadro contra o piso medido no silêncio inicial, lá é
+// energia de quadro com limiar adaptativo, então os dois números não são comparáveis.
+const TAREFAS = {
+  vogal:    { key:"vogal",    titulo:"Vogal /a/ sustentada", instr:"Faça um “ahhhhhhhh” bem longo, prolongando por 5 segundos, tentando não variar o tom da voz.", alvo:5, min:3, max:8,  voicedMin:0.35, proximo:"Continuar" },
+  contagem: { key:"contagem", titulo:"Contagem de 1 a 10",   instr:"Conte em voz alta: “um, dois, três… ” até dez, em ritmo e volume naturais.", alvo:10, min:4, max:15, voicedMin:0.15, proximo:"Enviar para análise" },
+};
+const GRAUS = {
+  0:{rotulo:"G0",nome:"voz normal",cor:"var(--g0)",desc:"Sua voz não sugere alteração."},
+  1:{rotulo:"G1",nome:"disfonia leve",cor:"var(--g1)",desc:"Sinais leves. Vale acompanhar."},
+  2:{rotulo:"G2",nome:"disfonia moderada",cor:"var(--g2)",desc:"Sinais perceptíveis. Recomenda-se avaliação."},
+  3:{rotulo:"G3",nome:"disfonia intensa",cor:"var(--g3)",desc:"Sinais importantes. Procure avaliação com prioridade."},
+};
+// Rótulos das medidas que o modelo pode usar: [rótulo, unidade, formatação].
+const MEDIDAS = {
+  f0media:["f0 média","Hz"], f0q1:["f0 quartil 1","Hz"], f0min:["f0 mínima","Hz"], f0max:["f0 máxima","Hz"],
+  PERIODO:["Período glótico médio","ms",v=>(v*1e3).toFixed(2)], PSD:["Desvio-padrão do período","ms",v=>(v*1e3).toFixed(3)],
+  LNPSD:["Log do desvio-padrão do período",""],
+  jitterLoc:["Jitter local","%"], jitterABS:["Jitter absoluto","µs",v=>(v*1e6).toFixed(1)], jitterPPQ5:["Jitter PPQ5","%"],
+  shimmerLoc:["Shimmer local","%"], shimmerdB:["Shimmer","dB"],
+  foCPP:["f0 pelo cepstro","Hz"], CPP:["CPP","dB"], CPPS:["CPPS","dB"], tilt:["Inclinação espectral","dB"],
+  H1A3:["H1–A3","dB"], GNE1000HZ:["GNE 1000 Hz",""], GNE2000HZ:["GNE 2000 Hz",""], GNE3000HZ:["GNE 3000 Hz",""],
+  Hfno:["Hfno",""], HNRmedia:["HNR média","dB"], HNRdp:["HNR desvio-padrão","dB"], HNRD:["HNRD","dB"],
+  PA:["Pico da autocorrelação (PA)",""], SNL100_3000HZ:["SNL 100–3000 Hz","dB"],
+};
+// O modelo escolhe as medidas separadamente para mulheres e homens, e o resultado
+// mostra as da versão usada. Estas listas são as do modelo em produção; se o
+// GET /features da API responder, valem as de lá.
+let MEDIDAS_POR_SEXO = {
+  mulher:["f0media","f0q1","PERIODO","LNPSD","jitterLoc","jitterABS","jitterPPQ5","shimmerLoc","shimmerdB","CPP","CPPS","H1A3","GNE1000HZ","GNE2000HZ","GNE3000HZ","Hfno","HNRmedia","HNRD","PA","SNL100_3000HZ"],
+  homem:["f0media","f0q1","f0min","f0max","PERIODO","PSD","jitterABS","shimmerLoc","shimmerdB","foCPP","CPP","CPPS","tilt","GNE1000HZ","GNE2000HZ","GNE3000HZ","Hfno","HNRmedia","HNRdp","HNRD"],
+};
+fetch(GRBASI + "/features").then(r => r.json()).then(d => {
+  if(d && d.medidas_por_sexo && d.medidas_por_sexo.mulher && d.medidas_por_sexo.homem) MEDIDAS_POR_SEXO = d.medidas_por_sexo;
+}).catch(function(){});
+
+// Valores de corte normativos (falantes do PB, vogal [a], extraídos com o VoxMore).
+// Fonte: Feliciano et al. (2026) e, p/ CPP/CPPS, Lopes & Abreu (2024). Como são da
+// vogal sustentada, a comparação usa as medidas só da vogal (features_vogal do
+// extrator), e não as da vogal + contagem que vão para o modelo.
+// dir 'low' = normal ABAIXO do corte; 'high' = normal ACIMA.
+// min/max apenas definem a faixa desenhada na barra.
+const NORMATIVOS = {
+  jitterLoc:     { cut: 0.31,  dir: "low",  min: 0,   max: 1.2 },
+  jitterPPQ5:    { cut: 0.18,  dir: "low",  min: 0,   max: 0.7 },
+  shimmerLoc:    { cut: 2.78,  dir: "low",  min: 0,   max: 9 },
+  shimmerdB:     { cut: 0.24,  dir: "low",  min: 0,   max: 0.8 },
+  SNL100_3000HZ: { cut: 3.38,  dir: "low",  min: -2,  max: 12 },
+  CPP:           { cut: 28.77, dir: "high", min: 10,  max: 40 },
+  CPPS:          { cut: 17.02, dir: "high", min: 4,   max: 22 },
+  GNE1000HZ:     { cut: 0.92,  dir: "high", min: 0.6, max: 1.0 },
+  GNE2000HZ:     { cut: 0.92,  dir: "high", min: 0.6, max: 1.0 },
+  GNE3000HZ:     { cut: 0.9,   dir: "high", min: 0.6, max: 1.0 },
+  HNRmedia:      { cut: 20.73, dir: "high", min: 0,   max: 35 },
+  HNRD:          { cut: 29.78, dir: "high", min: 10,  max: 50 },
+};
+function fmtNum(v){ return Math.abs(v) >= 100 ? String(Math.round(v)) : Number(v).toFixed(2); }
+
+// Desenha a comparação com os valores de referência: cortes clínicos (faixa normal
+// de um lado) + faixas de f0 por sexo (normal no meio) + as medidas sem referência.
+// Mostra só as medidas que o modelo usou no resultado, com os valores medidos só na
+// vogal (featsVogal), porque é da vogal sustentada que saem os valores de referência.
+function renderComparacao(feats, res){
+  const imp = new Set((res && res.imputadas) || []);
+  const sx = res && res.sexo_usado;
+  const lista = (sx && MEDIDAS_POR_SEXO[sx]) || [...new Set([...MEDIDAS_POR_SEXO.mulher, ...MEDIDAS_POR_SEXO.homem])];
+  const medidas = lista.map(k => [k, ...(MEDIDAS[k] || [k, ""])]);
+  const fv = featsVogal || {};
+  const pct = x => Math.max(0, Math.min(100, x * 100));
+  const mix = (cor, p) => "color-mix(in oklab, " + cor + " " + p + "%, white)";
+  const corDe = ok => ok == null ? "var(--mut)" : (ok ? "var(--g0)" : "var(--g3)");
+  const pill = ok => ok == null
+    ? '<span class="cmp-pill" style="background:var(--soft);color:var(--mut)">sem dado</span>'
+    : ok
+      ? '<span class="cmp-pill" style="background:' + mix("var(--g0)", 16) + ';color:var(--g0)">Dentro do esperado</span>'
+      : '<span class="cmp-pill" style="background:' + mix("var(--g3)", 14) + ';color:var(--g3)">Fora do esperado</span>';
+  const zona = (w, cor, p) => '<span class="cmp-z" style="width:' + pct(w) + '%;background:' + mix(cor, p) + '"></span>';
+  const row = (label, ok, zonas, pos, tem, valTxt, refTxt) => {
+    const cor = corDe(ok);
+    const marca = tem ? '<span class="cmp-mark" style="left:' + pct(pos) + '%;background:' + cor + '"></span>' : "";
+    return '<div class="cmp-row"><div class="cmp-head"><span class="cmp-name">' + label + '</span>' + pill(ok) + '</div>'
+      + '<div class="cmp-track">' + zonas + marca + '</div>'
+      + '<div class="cmp-ref"><b style="color:' + cor + '">' + valTxt + '</b> · ' + refTxt + '</div></div>';
+  };
+
+  // Faixas de f0 por sexo — valores gerais da literatura (NÃO corte de distúrbio do PB),
+  // usando o gênero do questionário. Quem responde "Outro" fica sem faixa:
+  // não dá pra presumir um intervalo de referência sem uma das duas categorias.
+  const g = perfil && perfil.genero;
+  const f0r = g === "Mulher" ? { lo: 150, hi: 250, min: 100, max: 300 }
+            : g === "Homem" ? { lo: 80, hi: 150, min: 50, max: 200 } : null;
+  const RANGE = {};
+  if (f0r) { RANGE.f0media = f0r; RANGE.f0q1 = f0r; }
+
+  let bars = "";
+  // 1) medidas com corte clínico (faixa normal de um lado só)
+  medidas.forEach(([k, label, un]) => {
+    const n = NORMATIVOS[k]; if (!n) return;
+    const v = fv[k]; const tem = (v != null && !isNaN(v));
+    const cpos = (n.cut - n.min) / (n.max - n.min);
+    const ok = tem ? (n.dir === "low" ? v <= n.cut : v >= n.cut) : null;
+    const zOk = zona(n.dir === "low" ? cpos : 1 - cpos, "var(--g0)", 30);
+    const zBad = zona(n.dir === "low" ? 1 - cpos : cpos, "var(--g3)", 22);
+    const valTxt = tem ? (fmtNum(v) + (un ? " " + un : "")) : "—";
+    const refTxt = "referência (normal): " + (n.dir === "low" ? "≤ " : "> ") + n.cut + (un ? " " + un : "");
+    bars += row(label, ok, n.dir === "low" ? zOk + zBad : zBad + zOk, (v - n.min) / (n.max - n.min), tem, valTxt, refTxt);
+  });
+  // 2) f0 por sexo (faixa esperada dos dois lados: vermelho–verde–vermelho)
+  medidas.forEach(([k, label, un]) => {
+    const r = RANGE[k]; if (!r) return;
+    const v = fv[k]; const tem = (v != null && !isNaN(v));
+    const lo = (r.lo - r.min) / (r.max - r.min), hi = (r.hi - r.min) / (r.max - r.min);
+    const ok = tem ? (v >= r.lo && v <= r.hi) : null;
+    const zonas = zona(lo, "var(--g3)", 22) + zona(hi - lo, "var(--g0)", 30) + zona(1 - hi, "var(--g3)", 22);
+    const valTxt = tem ? (fmtNum(v) + (un ? " " + un : "")) : "—";
+    const refTxt = "faixa esperada (" + g + "): " + r.lo + "–" + r.hi + (un ? " " + un : "");
+    bars += row(label, ok, zonas, (v - r.min) / (r.max - r.min), tem, valTxt, refTxt);
+  });
+  $("r-compare").innerHTML = featsVogal ? bars
+    : '<p class="cmp-intro">Desta vez não foi possível medir a vogal separadamente, então a comparação com os valores de referência não está disponível.</p>';
+
+  // medidas sem referência (exclui as com corte e as de faixa de f0)
+  let cards = "";
+  medidas.forEach(([k, label, un, fmt]) => {
+    if (NORMATIVOS[k] || RANGE[k]) return;
+    const v = fv[k];
+    const val = (v == null || isNaN(v)) ? "—" : (fmt ? fmt(v) : fmtNum(v));
+    cards += '<div class="meas"><b>' + val + (un && val !== "—" ? ' <span style="font-size:11px;color:var(--mut)">' + un + '</span>' : "") + '</b><span>' + label + '</span></div>';
+  });
+  $("r-measures").innerHTML = cards;
+  $("r-imp").textContent = imp.size ? (imp.size + " das " + lista.length + " medidas que o modelo usa não puderam ser calculadas do seu áudio e foram preenchidas pela mediana do conjunto de treino.") : "";
+}
+
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on")); $(id).classList.add("on"); window.scrollTo({top:0,behavior:"smooth"}); }
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const clickOnce = el => new Promise(res=>el.addEventListener("click",res,{once:true}));
+
+// ---------- captura de áudio ----------
+let stream=null, ctx=null, proc=null, chunks=[], voiced=0, frames=0, sr=44100, frameRms=[], noiseFloor=0;
+// Abre o microfone (dispara o popup de permissão). Separado da captura para que o
+// popup aconteça ANTES da contagem regressiva, não durante o cronômetro.
+async function openMic(){
+  return await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+}
+// Começa a coletar amostras de um stream já autorizado.
+function beginCapture(micStream, onLevel){
+  stream = micStream;
+  if(!ctx){ const AC = window.AudioContext||window.webkitAudioContext; ctx = new AC(); }
+  if(ctx.state==="suspended") ctx.resume().catch(()=>{});
+  sr = ctx.sampleRate;
+  const src = ctx.createMediaStreamSource(stream);
+  proc = ctx.createScriptProcessor(4096,1,1);
+  chunks=[]; voiced=0; frames=0; frameRms=[];
+  proc.onaudioprocess = e=>{
+    const d = e.inputBuffer.getChannelData(0);
+    chunks.push(new Float32Array(d));
+    let s=0; for(let i=0;i<d.length;i++) s+=d[i]*d[i];
+    const rms=Math.sqrt(s/d.length);
+    frames++; if(rms>RMS_MIN) voiced++; frameRms.push(rms);
+    onLevel(Math.min(1,rms*8));
+  };
+  src.connect(proc); proc.connect(ctx.destination);
+}
+function stopCapture(){
+  try{proc&&proc.disconnect();}catch(e){}
+  proc=null;
+  if(ctx){ctx.close().catch(()=>{});ctx=null;}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+}
+function encodeWav(chs, rate){
+  let len=0; chs.forEach(c=>len+=c.length);
+  const pcm=new Float32Array(len); let off=0; chs.forEach(c=>{pcm.set(c,off);off+=c.length;});
+  const ab=new ArrayBuffer(44+len*2), v=new DataView(ab);
+  const wr=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  wr(0,"RIFF");v.setUint32(4,36+len*2,true);wr(8,"WAVE");wr(12,"fmt ");
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  wr(36,"data");v.setUint32(40,len*2,true);
+  let p=44; for(let i=0;i<len;i++){const s=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(p,s<0?s*0x8000:s*0x7fff,true);p+=2;}
+  return new Blob([v],{type:"audio/wav"});
+}
+
+// ---------- fluxo de uma tarefa ----------
+function renderBars(level, t){
+  const bars=document.querySelectorAll("#rec-body .bars i");
+  bars.forEach((b,i)=>{
+    const h = level>0 ? 8+Math.abs(Math.sin(i*0.5+t*3))*level*80 : 8;
+    b.style.height=h+"px"; b.style.opacity = level>0?1:.35;
+  });
+}
+function barsHTML(){ let s='<div class="bars" aria-hidden="true">'; for(let i=0;i<24;i++)s+='<i></i>'; return s+'</div>'; }
+
+function recordTask(cfg){
+  return new Promise(async (resolve)=>{
+    $("chip-"+cfg.key).classList.add("active");
+    const body=$("rec-body");
+
+    function idle(){
+      // Sem "ouvir exemplo" em nenhuma etapa: tocar uma voz de referência antes do
+      // participante gravar arrisca ele mimetizar o tom/ritmo ouvido, contaminando a medida.
+      body.innerHTML =
+        '<h2>'+cfg.titulo+'</h2><p class="sub">'+cfg.instr+'</p>'+barsHTML()+
+        '<div class="row" style="margin-top:14px;"><button id="go" class="btn btn-primary">Iniciar gravação</button></div>';
+      $("go").addEventListener("click", iniciar, {once:true});
+    }
+    async function iniciar(){
+      // Liga o motor de áudio JÁ no toque: o iOS exige que o AudioContext seja
+      // criado/retomado dentro do gesto do usuário, senão a gravação sai muda.
+      try{
+        const AC=window.AudioContext||window.webkitAudioContext;
+        ctx = new AC();
+        if(ctx.state==="suspended") ctx.resume().catch(()=>{});
+      }catch(e){ ctx=null; }
+      // Pede o microfone ANTES da contagem: o popup não cai no meio da gravação
+      // e o cronômetro não conta o tempo em que o popup ficou aberto.
+      body.innerHTML = '<h2>'+cfg.titulo+'</h2><p class="sub">Permita o acesso ao microfone para começar.</p>'+barsHTML();
+      let micStream;
+      try{ micStream = await openMic(); }
+      catch(e){ stopCapture(); return fail("Não consegui acessar o microfone. Verifique a permissão de microfone e tente de novo.", true); }
+      // Mede o ruído do ambiente com o usuário em silêncio (referência do SNR).
+      body.innerHTML = '<h2>'+cfg.titulo+'</h2><p class="sub">Medindo o ruído do ambiente. Fique em silêncio um instante.</p>'+barsHTML();
+      noiseFloor = await medirRuido(micStream, 0.8);
+      await countdown();
+      recording(micStream);
+    }
+    async function countdown(){
+      for(let n=3;n>=1;n--){ body.innerHTML='<div class="count">'+n+'</div><p class="sub">Prepare-se… '+(cfg.key==="vogal"?"e faça o ahhhhhhhhh":"comece a contar")+'</p>'; await sleep(800); }
+    }
+    function recording(micStream){
+      body.innerHTML =
+        '<h2>'+cfg.titulo+'</h2><p class="sub"><span class="rec-dot"></span>Gravando… '+(cfg.key==="vogal"?"sustente o /a/":"conte até dez")+'</p>'+
+        barsHTML()+'<div class="timer"><span id="secs">0.0</span>s<small>/ meta '+cfg.alvo+'s</small></div>'+
+        '<div class="row" style="margin-top:14px;"><button id="stop" class="btn btn-danger" disabled>Parar</button></div>';
+      // O cronômetro só começa aqui, junto com a captura real (microfone já autorizado).
+      let secs=0, start=performance.now();
+      try{ beginCapture(micStream, l=>renderBars(l,(performance.now()-start)/1000)); }
+      catch(e){ stopCapture(); return fail("Não consegui iniciar a gravação. Tente de novo.", true); }
+      const stopBtn=$("stop");
+      const tick=setInterval(()=>{
+        secs=(performance.now()-start)/1000;
+        $("secs").textContent=secs.toFixed(1);
+        if(secs>=0.5) stopBtn.disabled=false;
+        if(secs>=cfg.max){ done(); }
+      },100);
+      function done(){ clearInterval(tick); finish(secs); }
+      stopBtn.addEventListener("click", done, {once:true});
+    }
+    function finish(secs){
+      const vf = frames ? voiced/frames : 0;
+      const snr = (noiseFloor>1e-6) ? 20*Math.log10(nivelSinal(frameRms)/noiseFloor) : Infinity;
+      const chs=chunks, rate=sr;
+      stopCapture();
+      if(secs<cfg.min) return fail("Gravação muito curta ("+secs.toFixed(1)+"s). "+(cfg.key==="vogal"?"Sustente o /a/":"A contagem")+" por pelo menos "+cfg.min+"s.");
+      if(vf<cfg.voicedMin) return fail("Não detectamos sua voz com clareza. Aproxime-se ~10 cm do microfone e fale de forma contínua.");
+      if(snr < SNR_MIN_DB) return fail("O microfone captou muito ruído. Procure um lugar mais silencioso, aproxime-se do microfone e regrave.");
+      const blob=encodeWav(chs,rate); const url=URL.createObjectURL(blob);
+      body.innerHTML =
+        '<div class="msg msg-ok">Voz captada ('+secs.toFixed(1)+'s). Ouça antes de continuar.</div>'+
+        '<audio controls src="'+url+'"></audio>'+
+        '<div class="row" style="margin-top:16px;"><button id="redo" class="btn btn-ghost">Refazer</button><button id="next" class="btn btn-primary">'+cfg.proximo+'</button></div>';
+      $("redo").addEventListener("click", ()=>{URL.revokeObjectURL(url);idle();}, {once:true});
+      $("next").addEventListener("click", ()=>{
+        URL.revokeObjectURL(url);
+        $("chip-"+cfg.key).classList.remove("active");
+        $("chip-"+cfg.key).classList.add("done");
+        resolve(blob);
+      }, {once:true});
+    }
+    function fail(text, micIssue){
+      body.innerHTML =
+        '<div class="msg msg-warn">'+text+'</div>'+
+        '<div class="row"><button id="retry" class="btn btn-primary">'+(micIssue?"Tentar de novo":"Regravar")+'</button></div>';
+      $("retry").addEventListener("click", idle, {once:true});
+    }
+    idle();
+  });
+}
+
+// ---------- APIs ----------
+function fetchTimeout(url, opts, ms){
+  const ctrl=new AbortController();
+  const id=setTimeout(()=>ctrl.abort(), ms);
+  return fetch(url,{...opts,signal:ctrl.signal}).finally(()=>clearTimeout(id));
+}
+let coldTimer=null;
+function setStep(step){
+  ["extraindo","classificando"].forEach(s=>{
+    const li=$("st-"+s); li.classList.remove("active","done");
+    if(s===step) li.classList.add("active");
+  });
+  if(step==="classificando") $("st-extraindo").classList.add("done");
+}
+async function extrair(vogal, contagem){
+  setStep("extraindo");
+  $("an-hint").textContent="";
+  coldTimer=setTimeout(()=>{ $("an-hint").textContent="O servidor de análise está acordando (primeira análise pode levar até ~1 minuto)…"; }, 6000);
+  const fd=new FormData();
+  fd.append("vogal", new File([vogal],"vogal.wav",{type:"audio/wav"}));
+  fd.append("contagem", new File([contagem],"contagem.wav",{type:"audio/wav"}));
+  // Só pedimos o áudio de volta quando a pessoa autorizou guardá-lo.
+  const querAudio = !!(perfil && perfil.consente);
+  if(querAudio) fd.append("incluir_audio","true");
+  // Medidas só da vogal, para a comparação com os valores normativos (que são da vogal).
+  fd.append("medidas_vogal","true");
+  let r;
+  try{ r=await fetchTimeout(EXTRATOR+"/extrair",{method:"POST",body:fd},150000); }
+  catch(e){ throw new Error("Não consegui falar com o servidor de extração (ele pode estar iniciando). Tente novamente em alguns instantes."); }
+  finally{ clearTimeout(coldTimer); }
+  if(!r.ok){
+    let m="Falha na extração das medidas (HTTP "+r.status+").", culpadas=[];
+    try{
+      const j=await r.json();
+      if(j.erro) m=j.erro;
+      // O 422 do crivo de SNR traz a medida de cada gravação em snr_db e o piso em
+      // snr_minima_db. Sem olhar isso, uma gravação ruim faria a pessoa refazer as duas.
+      // null quer dizer que não deu para medir, e também pede gravação nova.
+      if(j.snr_db && typeof j.snr_minima_db === "number"){
+        culpadas = Object.keys(j.snr_db).filter(k =>
+          k in TAREFAS && (j.snr_db[k] === null || j.snr_db[k] < j.snr_minima_db));
+      }
+    }catch(e){}
+    const err = new Error(m); err.culpadas = culpadas; throw err;
+  }
+  const j=await r.json();
+  audioTarefaB64 = querAudio ? (j.audio_wav_b64 || null) : null;
+  featsVogal = j.features_vogal || null;
+  return j.linha_classificar || j.features || {};
+}
+// O modelo escolhe as medidas separadamente para mulheres e homens, então o gênero
+// do questionário vai junto. Com "Outro" ou sem resposta, a API estima o sexo pela voz.
+async function classificar(feats){
+  setStep("classificando");
+  $("an-hint").textContent="";
+  const corpo = {...feats, sexo: (perfil && perfil.genero) || null};
+  let r;
+  try{ r=await fetchTimeout(GRBASI+"/classificar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corpo)},90000); }
+  catch(e){ throw new Error("Não consegui falar com o servidor de classificação. Tente novamente em alguns instantes."); }
+  if(!r.ok) throw new Error("Falha ao classificar (HTTP "+r.status+").");
+  return r.json();
+}
+
+// ---------- resultado ----------
+function showResult(res, feats){
+  const g = GRAUS[res.grau] || GRAUS[0];
+  $("r-grade").textContent = res.grau_rotulo || g.rotulo;
+  $("r-grade").style.background = g.cor;
+  $("r-title").textContent = (res.grau_rotulo||g.rotulo)+" · "+(res.classificacao||g.nome);
+  $("r-msg").textContent = res.mensagem || g.desc;
+  // gauge
+  const cuts=[28.25,48.85,71.05], cols=["var(--g0)","var(--g1)","var(--g2)","var(--g3)"];
+  const segs=[[0,cuts[0]],[cuts[0],cuts[1]],[cuts[1],cuts[2]],[cuts[2],100]];
+  let gh=""; segs.forEach((s,i)=>{ gh+='<span style="width:'+((s[1]-s[0]))+'%;background:'+cols[i]+'"></span>'; });
+  const score=Math.max(0,Math.min(100, res.score_GG!=null?res.score_GG:0));
+  gh+='<div class="gmark" style="left:'+score+'%"></div>';
+  $("r-gauge").innerHTML=gh;
+  // limite
+  $("r-limite").innerHTML = res.limite && res.alerta_limite ? '<div class="msg msg-warn" style="margin-top:18px;">'+res.alerta_limite+'</div>' : "";
+  // medidas: comparação com os valores de referência + medidas sem corte clínico
+  renderComparacao(feats, res);
+  // legenda dos graus (com o resultado destacado) e aviso de faixa etária
+  $("r-legend").innerHTML = legendaHTML(res.grau);
+  $("r-caveat").innerHTML = (perfil && perfil.foraFaixa)
+    ? '<div class="msg msg-warn" style="margin-top:16px;">Sua idade ('+perfil.idade+' anos) está fora da faixa de treino do modelo (19–65 anos), então esta estimativa pode ser menos confiável.</div>'
+    : "";
+  show("result");
+}
+
+// ---------- legenda, questionário, SNR e tutorial ----------
+const LEGENDA = [
+  [0,"Não-disfônico","voz saudável, sem sinais de alteração"],
+  [1,"Disfonia leve","alteração discreta na voz"],
+  [2,"Disfonia moderada","alteração perceptível"],
+  [3,"Disfonia intensa","alteração acentuada (grave)"],
+];
+let perfil = {};
+// Áudio da tarefa (vogal + contagem) devolvido pelo extrator, só quando há consentimento.
+let audioTarefaB64 = null;
+// Medidas calculadas só na vogal, usadas apenas na comparação com os valores normativos.
+let featsVogal = null;
+function legendaHTML(destaque){
+  return LEGENDA.map(([g,nome,desc])=>{
+    const cor=GRAUS[g].cor, on=(destaque===g);
+    return '<div class="lg" style="'+(on?'outline:2px solid '+cor+';background:color-mix(in oklab,'+cor+' 10%,white);':'')+'">'+
+      '<span class="dotg" style="background:'+cor+'">G'+g+'</span>'+
+      '<div><b>G'+g+' · '+nome+'</b><em>'+desc+'</em></div></div>';
+  }).join("");
+}
+function initQuest(){
+  const idade=$("q-idade"), warn=$("idade-warn"), cont=$("q-continue");
+  if(COLETA_URL){
+    $("coleta-field").style.display="";
+    $("quest-sub").textContent="Ajudam a interpretar o resultado. Suas respostas ficam neste aparelho. Só enviamos algo se você autorizar abaixo.";
+  }
+  let warnTimer=null;
+  function foraFaixa(){
+    const a=parseInt(idade.value,10);
+    return Number.isFinite(a)&&a>=1&&a<=120&&(a<19||a>65);
+  }
+  function updateBtn(){
+    const g=document.querySelector('input[name=genero]:checked');
+    const p=document.querySelector('input[name=prof]:checked');
+    const q=document.querySelector('input[name=queixa]:checked');
+    const ef=document.querySelector('input[name=esforco]:checked');
+    const r=document.querySelector('input[name=rouquidao]:checked');
+    const a=parseInt(idade.value,10);
+    const idadeOk=Number.isFinite(a)&&a>=1&&a<=120;
+    cont.disabled=!(g&&p&&q&&ef&&r&&idadeOk);
+  }
+  // O aviso de idade espera o usuário parar de digitar (ou sair do campo);
+  // o botão Continuar reage na hora.
+  function agendaAviso(){
+    clearTimeout(warnTimer);
+    warn.classList.remove("on");
+    warnTimer=setTimeout(()=>warn.classList.toggle("on", foraFaixa()), 700);
+  }
+  function mostraAviso(){ clearTimeout(warnTimer); warn.classList.toggle("on", foraFaixa()); }
+  document.querySelectorAll('#quest input[type=radio]').forEach(el=>el.addEventListener("change",updateBtn));
+  idade.addEventListener("input", ()=>{ updateBtn(); agendaAviso(); });
+  idade.addEventListener("blur", mostraAviso);
+  updateBtn();
+}
+function coletaPerfil(){
+  const a=parseInt($("q-idade").value,10);
+  const pick=n=>{const el=document.querySelector('input[name='+n+']:checked');return el?el.value:null;};
+  perfil={ genero:pick("genero"), idade:Number.isFinite(a)?a:null, profissaoUsaVoz:pick("prof"), queixaVocal:pick("queixa"), esforcoVocal:pick("esforco"), rouquidao:pick("rouquidao") };
+  perfil.foraFaixa = perfil.idade!=null && (perfil.idade<19||perfil.idade>65);
+  perfil.consente = (pick("coleta")==="sim");
+}
+// Envio opt-in para a Planilha (Apps Script). "no-cors" evita o preflight que o
+// Apps Script não trata; é fire-and-forget (não lemos a resposta). Vai o questionário,
+// as 20 medidas, o grau e o áudio da tarefa — ligados pelo SESSAO_ID, que também vira
+// o nome do arquivo no Drive. Nada aqui identifica a pessoa.
+function enviarColeta(res, feats){
+  if(!COLETA_URL || !perfil || !perfil.consente) return;
+  try{
+    const payload={
+      id:SESSAO_ID,
+      genero:perfil.genero, idade:perfil.idade,
+      profissaoUsaVoz:perfil.profissaoUsaVoz, queixaVocal:perfil.queixaVocal,
+      esforcoVocal:perfil.esforcoVocal, rouquidao:perfil.rouquidao,
+      foraFaixa:!!perfil.foraFaixa,
+      score_GG:(res&&res.score_GG!=null)?res.score_GG:null,
+      grau:(res&&res.grau!=null)?res.grau:null,
+      grau_rotulo:(res&&res.grau_rotulo)||"",
+      features:feats||null,
+      audio_wav_b64:audioTarefaB64||null
+    };
+    fetch(COLETA_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)}).catch(()=>{});
+  }catch(e){}
+}
+// Ruído do ambiente: mede a energia do microfone por alguns instantes com o usuário
+// em silêncio (mediana do RMS). Vira a referência do SNR — assim um som contínuo
+// como a vogal não é comparado consigo mesmo e confundido com ruído.
+function medirRuido(micStream, secs){
+  return new Promise(resolve=>{
+    if(!ctx){ resolve(0); return; }   // reaproveita o AudioContext ligado no toque
+    const src=ctx.createMediaStreamSource(micStream);
+    const p=ctx.createScriptProcessor(4096,1,1);
+    const vals=[];
+    p.onaudioprocess=e=>{
+      const d=e.inputBuffer.getChannelData(0);
+      let s=0; for(let i=0;i<d.length;i++) s+=d[i]*d[i];
+      vals.push(Math.sqrt(s/d.length));
+    };
+    src.connect(p); p.connect(ctx.destination);
+    setTimeout(()=>{
+      try{p.disconnect();}catch(e){}
+      try{src.disconnect();}catch(e){}
+      vals.sort((a,b)=>a-b);
+      resolve(vals.length ? vals[Math.floor(vals.length/2)] : 0);
+    }, Math.round(secs*1000));
+  });
+}
+// Nível típico do sinal gravado: média da metade mais forte dos quadros.
+function nivelSinal(vals){
+  if(!vals||!vals.length) return 0;
+  const s=[...vals].sort((a,b)=>a-b);
+  let sum=0,n=0; for(let i=Math.floor(s.length*0.5);i<s.length;i++){sum+=s[i];n++;}
+  return n ? sum/n : s[s.length-1];
+}
+// ---------- orquestração ----------
+// Falha na análise aparece na própria tela de gravacão, e não numa tela separada
+// que só sabia recarregar a página: recarregar jogava a pessoa de volta no
+// questionário e ela tinha que responder tudo outra vez.
+// Duas saídas, porque as causas são diferentes: servidor fora do ar ou lento pede
+// só uma nova tentativa, com as mesmas gravacões; áudio recusado pede gravacão nova.
+// Quando o extrator diz qual das duas reprovou, só aquela é refeita, e o botão em
+// destaque passa a ser o de regravar, porque insistir na análise do mesmo áudio
+// ruim só daria o mesmo erro.
+const NOME_TAREFA = { vogal:"a vogal", contagem:"a contagem" };
+function falhaDeAnalise(msg, culpadas){
+  const so = culpadas.length === 1 ? culpadas[0] : null;
+  const rotulo = so ? "Regravar "+NOME_TAREFA[so] : "Regravar";
+  const cl = n => 'class="btn '+(culpadas.length ? (n==="regravar"?"btn-primary":"btn-ghost")
+                                                : (n==="regravar"?"btn-ghost":"btn-primary"))+'"';
+  const bRe = '<button id="reanalisar" '+cl("reanalisar")+'>Analisar de novo</button>';
+  const bGrav = '<button id="regravar" '+cl("regravar")+'>'+rotulo+'</button>';
+  return new Promise(resolve=>{
+    show("rec");
+    $("rec-body").innerHTML =
+      '<div class="msg msg-warn">'+msg+'</div>'+
+      '<div class="row">'+(culpadas.length ? bGrav+bRe : bRe+bGrav)+'</div>';
+    $("reanalisar").addEventListener("click", ()=>resolve({acao:"analisar", quais:[]}), {once:true});
+    $("regravar").addEventListener("click", ()=>resolve({acao:"gravar", quais:culpadas}), {once:true});
+  });
+}
+async function run(){
+  $("intro-legend").innerHTML = legendaHTML();
+  initQuest();
+  show("intro");
+  await clickOnce($("btn-start"));
+  show("quest");
+  await clickOnce($("q-continue"));
+  coletaPerfil();
+  const grav = { vogal:null, contagem:null };
+  for(;;){
+    const faltam = ["vogal","contagem"].filter(k => !grav[k]);
+    if(faltam.length){
+      show("rec");
+      faltam.forEach(k => { $("chip-"+k).className="taskchip"; });
+      for(let i=0;i<faltam.length;i++){
+        const k = faltam[i];
+        // o rótulo do botão depende de ser ou não a última gravação que falta
+        const cfg = {...TAREFAS[k],
+                     proximo: i === faltam.length-1 ? "Enviar para análise" : "Continuar"};
+        grav[k] = await recordTask(cfg);
+      }
+    }
+    show("analyzing");
+    try{
+      const feats = await extrair(grav.vogal, grav.contagem);
+      const res = await classificar(feats);
+      showResult(res, feats);
+      enviarColeta(res, feats);
+      return;
+    }catch(e){
+      const msg = e && e.message ? e.message : "Erro inesperado na análise.";
+      const r = await falhaDeAnalise(msg, (e && e.culpadas) || []);
+      if(r.acao === "gravar"){
+        (r.quais.length ? r.quais : ["vogal","contagem"]).forEach(k => { grav[k]=null; });
+      }
+    }
+  }
+}
+$("btn-again").addEventListener("click", ()=>location.reload());
+run();
+</script>
+</body>
+</html>
