@@ -15,9 +15,12 @@
  *   - o áudio da tarefa (vogal + contagem concatenadas) numa pasta do Drive, como <ID>.wav.
  * O ID é a única ligação entre a linha e o arquivo — não recebemos nome, e-mail nem IP.
  *
- * COMO PUBLICAR (repetir a cada edição, senão o /exec continua na versão antiga):
- *   Implantar → Nova implantação → Tipo: App da Web
- *   Executar como: Eu   ·   Quem tem acesso: Qualquer pessoa
+ * COMO PUBLICAR
+ *   Primeira vez: Implantar → Nova implantação → Tipo: App da Web
+ *     Executar como: Eu   ·   Quem tem acesso: Qualquer pessoa
+ *   A cada edição: Implantar → Gerenciar implantações → lápis → Versão: Nova versão.
+ *     Assim a URL /exec continua a mesma. Sem isso, ela segue rodando a versão antiga,
+ *     e uma "Nova implantação" criaria outra URL, que o site não usa.
  *
  * Na primeira execução o Apps Script pede autorização para Planilhas e Drive.
  */
